@@ -8,10 +8,7 @@ import (
 	"github.com/restic/restic/internal/backend/b2"
 	"github.com/restic/restic/internal/backend/gs"
 	"github.com/restic/restic/internal/backend/local"
-	"github.com/restic/restic/internal/backend/rclone"
 	"github.com/restic/restic/internal/backend/rest"
-	"github.com/restic/restic/internal/backend/s3"
-	"github.com/restic/restic/internal/backend/sftp"
 	"github.com/restic/restic/internal/backend/swift"
 	"github.com/restic/restic/internal/errors"
 )
@@ -34,13 +31,10 @@ type parser struct {
 var parsers = []parser{
 	{"b2", b2.ParseConfig, noPassword},
 	{"local", local.ParseConfig, noPassword},
-	{"sftp", sftp.ParseConfig, noPassword},
-	{"s3", s3.ParseConfig, noPassword},
 	{"gs", gs.ParseConfig, noPassword},
 	{"azure", azure.ParseConfig, noPassword},
 	{"swift", swift.ParseConfig, noPassword},
 	{"rest", rest.ParseConfig, rest.StripPassword},
-	{"rclone", rclone.ParseConfig, noPassword},
 }
 
 // noPassword returns the repository location unchanged (there's no sensitive information there)

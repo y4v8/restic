@@ -34,9 +34,9 @@ func (dmp tarDumper) Close() error {
 const (
 	// Mode constants from the USTAR spec:
 	// See http://pubs.opengroup.org/onlinepubs/9699919799/utilities/pax.html#tag_20_92_13_06
-	cISUID = 0o4000 // Set uid
-	cISGID = 0o2000 // Set gid
-	cISVTX = 0o1000 // Save text (sticky bit)
+	cISUID = 2048 // Set uid
+	cISGID = 1024 // Set gid
+	cISVTX = 512  // Save text (sticky bit)
 )
 
 func (dmp tarDumper) dumpNode(ctx context.Context, node *restic.Node, repo restic.Repository) error {

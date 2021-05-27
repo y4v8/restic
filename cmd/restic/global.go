@@ -18,10 +18,7 @@ import (
 	"github.com/restic/restic/internal/backend/gs"
 	"github.com/restic/restic/internal/backend/local"
 	"github.com/restic/restic/internal/backend/location"
-	"github.com/restic/restic/internal/backend/rclone"
 	"github.com/restic/restic/internal/backend/rest"
-	"github.com/restic/restic/internal/backend/s3"
-	"github.com/restic/restic/internal/backend/sftp"
 	"github.com/restic/restic/internal/backend/swift"
 	"github.com/restic/restic/internal/cache"
 	"github.com/restic/restic/internal/debug"
@@ -39,7 +36,7 @@ import (
 	"golang.org/x/crypto/ssh/terminal"
 )
 
-var version = "0.12.0"
+var version = "0.12.0-winxp"
 
 // TimeFormat is the format used for all timestamps printed by restic.
 const TimeFormat = "2006-01-02 15:04:05"
@@ -544,36 +541,6 @@ func parseConfig(loc location.Location, opts options.Options) (interface{}, erro
 		debug.Log("opening local repository at %#v", cfg)
 		return cfg, nil
 
-	case "sftp":
-		cfg := loc.Config.(sftp.Config)
-		if err := opts.Apply(loc.Scheme, &cfg); err != nil {
-			return nil, err
-		}
-
-		debug.Log("opening sftp repository at %#v", cfg)
-		return cfg, nil
-
-	case "s3":
-		cfg := loc.Config.(s3.Config)
-		if cfg.KeyID == "" {
-			cfg.KeyID = os.Getenv("AWS_ACCESS_KEY_ID")
-		}
-
-		if cfg.Secret == "" {
-			cfg.Secret = os.Getenv("AWS_SECRET_ACCESS_KEY")
-		}
-
-		if cfg.Region == "" {
-			cfg.Region = os.Getenv("AWS_DEFAULT_REGION")
-		}
-
-		if err := opts.Apply(loc.Scheme, &cfg); err != nil {
-			return nil, err
-		}
-
-		debug.Log("opening s3 repository at %#v", cfg)
-		return cfg, nil
-
 	case "gs":
 		cfg := loc.Config.(gs.Config)
 		if cfg.ProjectID == "" {
@@ -651,14 +618,6 @@ func parseConfig(loc location.Location, opts options.Options) (interface{}, erro
 
 		debug.Log("opening rest repository at %#v", cfg)
 		return cfg, nil
-	case "rclone":
-		cfg := loc.Config.(rclone.Config)
-		if err := opts.Apply(loc.Scheme, &cfg); err != nil {
-			return nil, err
-		}
-
-		debug.Log("opening rest repository at %#v", cfg)
-		return cfg, nil
 	}
 
 	return nil, errors.Fatalf("invalid backend: %q", loc.Scheme)
@@ -695,10 +654,6 @@ func open(s string, gopts GlobalOptions, opts options.Options) (restic.Backend, 
 	switch loc.Scheme {
 	case "local":
 		be, err = local.Open(globalOptions.ctx, cfg.(local.Config))
-	case "sftp":
-		be, err = sftp.Open(globalOptions.ctx, cfg.(sftp.Config))
-	case "s3":
-		be, err = s3.Open(globalOptions.ctx, cfg.(s3.Config), rt)
 	case "gs":
 		be, err = gs.Open(cfg.(gs.Config), rt)
 	case "azure":
@@ -709,8 +664,6 @@ func open(s string, gopts GlobalOptions, opts options.Options) (restic.Backend, 
 		be, err = b2.Open(globalOptions.ctx, cfg.(b2.Config), rt)
 	case "rest":
 		be, err = rest.Open(cfg.(rest.Config), rt)
-	case "rclone":
-		be, err = rclone.Open(cfg.(rclone.Config), lim)
 
 	default:
 		return nil, errors.Fatalf("invalid backend: %q", loc.Scheme)
@@ -728,7 +681,7 @@ func open(s string, gopts GlobalOptions, opts options.Options) (restic.Backend, 
 		}
 	}
 
-	if loc.Scheme == "local" || loc.Scheme == "sftp" {
+	if loc.Scheme == "local" {
 		// wrap the backend in a LimitBackend so that the throughput is limited
 		be = limiter.LimitBackend(be, lim)
 	}
@@ -771,10 +724,6 @@ func create(s string, opts options.Options) (restic.Backend, error) {
 	switch loc.Scheme {
 	case "local":
 		return local.Create(globalOptions.ctx, cfg.(local.Config))
-	case "sftp":
-		return sftp.Create(globalOptions.ctx, cfg.(sftp.Config))
-	case "s3":
-		return s3.Create(globalOptions.ctx, cfg.(s3.Config), rt)
 	case "gs":
 		return gs.Create(cfg.(gs.Config), rt)
 	case "azure":
@@ -785,8 +734,6 @@ func create(s string, opts options.Options) (restic.Backend, error) {
 		return b2.Create(globalOptions.ctx, cfg.(b2.Config), rt)
 	case "rest":
 		return rest.Create(globalOptions.ctx, cfg.(rest.Config), rt)
-	case "rclone":
-		return rclone.Create(globalOptions.ctx, cfg.(rclone.Config))
 	}
 
 	debug.Log("invalid repository scheme: %v", s)
